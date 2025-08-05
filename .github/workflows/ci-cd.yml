@@ -252,11 +252,36 @@ jobs:
 
       - name: Create S3 bucket for Terraform state (if not exists)
         run: |
-          aws s3api head-bucket --bucket ${{ secrets.TF_STATE_BUCKET }} 2>/dev/null || \
-          aws s3api create-bucket --bucket ${{ secrets.TF_STATE_BUCKET }} --region ${{ env.AWS_REGION }}
+          BUCKET_NAME="${{ secrets.TF_STATE_BUCKET }}"
+          echo "📦 Checking S3 bucket: $BUCKET_NAME"
+          
+          # Validate bucket name
+          if [[ ! "$BUCKET_NAME" =~ ^[a-z0-9][a-z0-9-]*[a-z0-9]$ ]] || [[ ${#BUCKET_NAME} -lt 3 ]] || [[ ${#BUCKET_NAME} -gt 63 ]]; then
+            echo "❌ Invalid bucket name: $BUCKET_NAME"
+            echo "Bucket names must:"
+            echo "  - Be 3-63 characters long"
+            echo "  - Contain only lowercase letters, numbers, and hyphens"
+            echo "  - Start and end with letter or number"
+            exit 1
+          fi
+          
+          # Check if bucket exists
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "✅ Bucket $BUCKET_NAME already exists"
+          else
+            echo "🆕 Creating bucket: $BUCKET_NAME"
+            if [ "${{ env.AWS_REGION }}" = "us-east-1" ]; then
+              aws s3api create-bucket --bucket "$BUCKET_NAME"
+            else
+              aws s3api create-bucket --bucket "$BUCKET_NAME" --region ${{ env.AWS_REGION }} --create-bucket-configuration LocationConstraint=${{ env.AWS_REGION }}
+            fi
+            echo "✅ Bucket created successfully"
+          fi
           
           # Enable versioning for state file protection
-          aws s3api put-bucket-versioning --bucket ${{ secrets.TF_STATE_BUCKET }} --versioning-configuration Status=Enabled
+          echo "🔄 Enabling bucket versioning..."
+          aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled
+          echo "✅ Bucket versioning enabled"
         continue-on-error: false
 
       - name: Create ECR repository (if not exists)

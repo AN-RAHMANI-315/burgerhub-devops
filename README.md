@@ -367,5 +367,6 @@ This project is licensed under the MIT License. See LICENSE file for details.
 ## 🚀 **Live Deployment Status**
 
 **Repository**: https://github.com/AN-RAHMANI-315/burgerhub-devops  
-**Status**: 🟡 Deployment in progress...  
-**Last Updated**: August 5, 2025
+**Status**: 🟡 Fixing security scan permissions...  
+**Last Updated**: August 5, 2025  
+**Note**: Removed conflicting workflow files to resolve SARIF upload issues

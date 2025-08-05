@@ -1,4 +1,4 @@
-name: CI/CD Pipeline for BurgerHub
+name: BurgerHub DevOps - CI/CD Pipeline
 
 on:
   push:

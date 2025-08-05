@@ -301,6 +301,24 @@ jobs:
             -backend-config="key=burgerhub/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
 
+      - name: Import existing IAM roles (if they exist)
+        run: |
+          echo "🔄 Checking and importing existing IAM roles..."
+          
+          # Check if roles exist and import them if they do
+          if aws iam get-role --role-name burgerhub-ecs-task-execution 2>/dev/null; then
+            echo "📥 Importing existing IAM role: burgerhub-ecs-task-execution"
+            terraform import aws_iam_role.ecs_task_execution burgerhub-ecs-task-execution || true
+          fi
+          
+          if aws iam get-role --role-name burgerhub-ecs-task 2>/dev/null; then
+            echo "📥 Importing existing IAM role: burgerhub-ecs-task"
+            terraform import aws_iam_role.ecs_task burgerhub-ecs-task || true
+          fi
+          
+          echo "✅ Import check completed"
+        continue-on-error: true
+
       - name: Terraform Validate
         run: terraform validate
 

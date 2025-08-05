@@ -358,4 +358,14 @@ This project is licensed under the MIT License. See LICENSE file for details.
 
 ---
 
-**Built with ❤️ by DevOps Engineers for the BurgerHub community**
+**Built with ❤️ by DevOps Engineers for the modern web**
+
+*Ready to deploy to production? Follow the [deployment checklist](DEPLOYMENT_CHECKLIST.md) for a smooth launch!*
+
+---
+
+## 🚀 **Live Deployment Status**
+
+**Repository**: https://github.com/AN-RAHMANI-315/burgerhub-devops  
+**Status**: 🟡 Deployment in progress...  
+**Last Updated**: August 5, 2025

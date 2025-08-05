@@ -400,8 +400,6 @@ resource "aws_iam_role" "ecs_task" {
     Name = "${var.project_name}-ecs-task-role"
   }
 }
-  }
-}
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "app" {

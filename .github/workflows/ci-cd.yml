@@ -98,15 +98,17 @@ jobs:
         with:
           scan-type: "fs"
           scan-ref: "frontend/"
-          format: "sarif"
-          output: "trivy-results.sarif"
+          format: "table"
+          output: "trivy-results.txt"
         continue-on-error: true
 
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('trivy-results.sarif') != '' && github.event_name == 'push'
+      - name: Upload Trivy scan results as artifact
+        uses: actions/upload-artifact@v4
+        if: always() && hashFiles('trivy-results.txt') != ''
         with:
-          sarif_file: "trivy-results.sarif"
+          name: trivy-security-scan
+          path: trivy-results.txt
+          retention-days: 30
         continue-on-error: true
 
   # Job 3: Build and Push Docker Image
@@ -171,15 +173,17 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-          format: "sarif"
-          output: "docker-trivy-results.sarif"
+          format: "table"
+          output: "docker-trivy-results.txt"
         continue-on-error: true
 
-      - name: Upload Docker scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('docker-trivy-results.sarif') != '' && github.event_name == 'push'
+      - name: Upload Docker scan results as artifact
+        uses: actions/upload-artifact@v4
+        if: always() && hashFiles('docker-trivy-results.txt') != ''
         with:
-          sarif_file: "docker-trivy-results.sarif"
+          name: docker-security-scan
+          path: docker-trivy-results.txt
+          retention-days: 30
         continue-on-error: true
 
   # Job 4: Deploy Infrastructure with Terraform
@@ -212,6 +216,21 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.6.0"
+
+      - name: Create S3 bucket for Terraform state (if not exists)
+        run: |
+          aws s3api head-bucket --bucket ${{ secrets.TF_STATE_BUCKET }} 2>/dev/null || \
+          aws s3api create-bucket --bucket ${{ secrets.TF_STATE_BUCKET }} --region ${{ env.AWS_REGION }}
+          
+          # Enable versioning for state file protection
+          aws s3api put-bucket-versioning --bucket ${{ secrets.TF_STATE_BUCKET }} --versioning-configuration Status=Enabled
+        continue-on-error: false
+
+      - name: Create ECR repository (if not exists)
+        run: |
+          aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} 2>/dev/null || \
+          aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }}
+        continue-on-error: true
 
       - name: Terraform Format Check
         run: terraform fmt -check
